@@ -16,9 +16,7 @@ import org.rust.lang.core.resolve.ref.RsReference
 
 @Suppress("unused")
 val RsMethodCall.lifetimeArguments: List<RsLifetime> get() = typeArgumentList?.lifetimeArguments.orEmpty()
-
 val RsMethodCall.typeArguments: List<RsTypeReference> get() = typeArgumentList?.typeArguments.orEmpty()
-
 val RsMethodCall.constArguments: List<RsElement> get() = typeArgumentList?.constArguments.orEmpty()
 
 val RsMethodCall.textRangeWithoutValueArguments: TextRange

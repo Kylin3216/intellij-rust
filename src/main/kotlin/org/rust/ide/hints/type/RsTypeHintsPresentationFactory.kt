@@ -103,21 +103,39 @@ class RsTypeHintsPresentationFactory(
     }
 
     private fun adtTypeHint(type: TyAdt, level: Int): InlayPresentation {
-        val adtName = type.item.name
         val typeDeclaration = type.item
+        val adtName = typeDeclaration.name
         val typeNamePresentation = factory.psiSingleReference(text(adtName)) { typeDeclaration }
-        val typeArguments = type.typeArguments.zip(type.item.typeParameters)
-
+        val typeArguments = type.typeArguments.zip(typeDeclaration.typeParameters)
         return withGenericsTypeHint(typeNamePresentation, typeArguments, type.constArguments, level)
     }
 
     private fun aliasTypeHint(boundElement: BoundElement<RsTypeAlias>, level: Int): InlayPresentation {
         val alias = boundElement.element
-
         val adtName = alias.name
         val typeNamePresentation = factory.psiSingleReference(text(adtName)) { alias }
         val typeArguments = alias.typeParameters.map { (boundElement.subst[it] ?: TyUnknown) to it }
+        return withGenericsTypeHint(typeNamePresentation, typeArguments, emptyList(), level)
+    }
 
+    private fun projectionTypeHint(type: TyProjection, level: Int): InlayPresentation {
+        val collapsible = factory.collapsible(
+            prefix = text("<"),
+            collapsed = text(PLACEHOLDER),
+            expanded = {
+                val typePresentation = hint(type.type, level + 1)
+                val traitPresentation = traitItemTypeHint(type.trait, level + 1, false)
+                listOf(typePresentation, traitPresentation).join(" as ")
+            },
+            suffix = text(">"),
+            startWithPlaceholder = checkSize(level, 2)
+        )
+
+        val target = type.target.element
+        val targetName = target.name
+        val targetPresentation = factory.psiSingleReference(text(targetName)) { target }
+        val typeNamePresentation = listOf(collapsible, targetPresentation).join("::")
+        val typeArguments = type.typeArguments.zip(target.typeParameters)
         return withGenericsTypeHint(typeNamePresentation, typeArguments, emptyList(), level)
     }
 
@@ -161,25 +179,6 @@ class RsTypeHintsPresentationFactory(
         text("*" + if (type.mutability.isMut) "mut " else "const "),
         hint(type.referenced, level) // level is not incremented intentionally
     ).join()
-
-    private fun projectionTypeHint(type: TyProjection, level: Int): InlayPresentation {
-        val collapsible = factory.collapsible(
-            prefix = text("<"),
-            collapsed = text(PLACEHOLDER),
-            expanded = {
-                val typePresentation = hint(type.type, level + 1)
-                val traitPresentation = traitItemTypeHint(type.trait, level + 1, false)
-                listOf(typePresentation, traitPresentation).join(" as ")
-            },
-            suffix = text(">"),
-            startWithPlaceholder = checkSize(level, 2)
-        )
-
-        val targetDeclaration = type.target
-        val targetPresentation = factory.psiSingleReference(text(targetDeclaration.name)) { targetDeclaration }
-
-        return listOf(collapsible, targetPresentation).join("::")
-    }
 
     private fun typeParameterTypeHint(type: TyTypeParameter): InlayPresentation {
         val parameter = type.parameter

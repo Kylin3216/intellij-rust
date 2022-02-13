@@ -107,10 +107,9 @@ enum class PathResolveStatus {
 }
 
 val RsPath.lifetimeArguments: List<RsLifetime> get() = typeArgumentList?.lifetimeArguments.orEmpty()
-
 val RsPath.typeArguments: List<RsTypeReference> get() = typeArgumentList?.typeArguments.orEmpty()
-
 val RsPath.constArguments: List<RsElement> get() = typeArgumentList?.constArguments.orEmpty()
+val RsPath.assocTypeBindings: List<RsAssocTypeBinding> get() = typeArgumentList?.assocTypeBindingList.orEmpty()
 
 abstract class RsPathImplMixin : RsStubbedElementImpl<RsPathStub>,
                                  RsPath {

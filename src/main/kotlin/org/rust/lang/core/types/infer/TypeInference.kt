@@ -479,7 +479,7 @@ class RsInferenceContext(
             ty1 is TyPrimitive && ty2 is TyPrimitive && ty1.javaClass == ty2.javaClass -> CoerceResult.Ok
             ty1 is TyTypeParameter && ty2 is TyTypeParameter && ty1 == ty2 -> CoerceResult.Ok
             ty1 is TyProjection && ty2 is TyProjection && ty1.target == ty2.target && combineBoundElements(ty1.trait, ty2.trait) -> {
-                combineTypes(ty1.type, ty2.type)
+                combineTypes(ty1.type, ty2.type).and { combineTypePairs(ty1.typeArguments.zip(ty2.typeArguments)) }
             }
             ty1 is TyReference && ty2 is TyReference && ty1.mutability == ty2.mutability -> {
                 combineTypes(ty1.referenced, ty2.referenced)
@@ -937,7 +937,7 @@ class RsInferenceContext(
 
         is TraitImplSource.ProjectionBound -> {
             val ty = callee.selfTy as TyProjection
-            val subst = ty.trait.subst + mapOf(TyTypeParameter.self() to ty.type).toTypeSubst()
+            val subst = ty.trait.subst + mapOf(TyTypeParameter.self() to ty.type).toTypeSubst() + ty.typeParameterValues
             val bound = ty.trait.element.bounds
                 .find { it.trait.element == source.value && probe { combineTypes(it.selfTy.substitute(subst), ty) }.isOk }
             bound?.trait?.subst?.substituteInValues(subst) ?: emptySubstitution
@@ -1028,10 +1028,9 @@ private fun List<RsPolybound>?.toPredicates(selfTy: Ty): Sequence<PsiPredicate> 
         val traitRef = bound.bound.traitRef ?: return@flatMap emptySequence<PsiPredicate>()
         val boundTrait = traitRef.resolveToBoundTrait() ?: return@flatMap emptySequence<PsiPredicate>()
 
-        val assocTypeBounds = traitRef.path.typeArgumentList?.assocTypeBindingList.orEmpty().asSequence()
+        val assocTypeBounds = traitRef.path.assocTypeBindings.asSequence()
             .flatMap nestedFlatMap@{
-                val assoc = it.reference.resolve() as? RsTypeAlias
-                    ?: return@nestedFlatMap emptySequence<PsiPredicate>()
+                val assoc = it.resolveToBoundAssocType() ?: return@nestedFlatMap emptySequence<PsiPredicate>()
                 val projectionTy = TyProjection.valueOf(selfTy, assoc)
                 val typeRef = it.typeReference
                 if (typeRef != null) {

@@ -230,12 +230,22 @@ ColonTypeArgumentList ::= &'::' TypeArgumentListImpl { elementType = TypeArgumen
 private TypeArgumentListImpl ::= '::'? '<' !'=' <<list_element AnyTypeArgument>>* '>' { pin = 3 }
 private AnyTypeArgument ::= AssocTypeBinding | TypeReference | Lifetime | RestrictedConstExpr
 
-AssocTypeBinding ::= identifier TypeParameterList? (AssocTypeBindingType | AssocTypeBindingBound) {
-  implements = [ "org.rust.lang.core.psi.ext.RsMandatoryReferenceElement" ]
-  mixin = "org.rust.lang.core.psi.ext.RsAssocTypeBindingMixin"
-  stubClass = "org.rust.lang.core.stubs.RsAssocTypeBindingStub"
+AssocTypeBinding ::= TypePathGenericArgsNoTypeQual (AssocTypeBindingType | AssocTypeBindingBound) {
+  implements = "org.rust.lang.core.psi.ext.RsInferenceContextOwner"
+  extends = "org.rust.lang.core.psi.ext.RsStubbedElementImpl<?>"
+  stubClass = "org.rust.lang.core.stubs.RsPlaceholderStub"
   elementTypeFactory = "org.rust.lang.core.stubs.StubImplementationsKt.factory"
 }
+
+// Path semantically constrained to resolve to a trait
+TraitRef ::= TypePathGenericArgsNoTypeQual {
+  implements = "org.rust.lang.core.psi.ext.RsInferenceContextOwner"
+  extends = "org.rust.lang.core.psi.ext.RsStubbedElementImpl<?>"
+  stubClass = "org.rust.lang.core.stubs.RsPlaceholderStub"
+  elementTypeFactory = "org.rust.lang.core.stubs.StubImplementationsKt.factory"
+  name = "trait"
+}
+
 
 private AssocTypeBindingType ::=  '=' TypeReference { pin = 1 }
 private AssocTypeBindingBound ::=  ':' TypeBounds { pin = 1 }

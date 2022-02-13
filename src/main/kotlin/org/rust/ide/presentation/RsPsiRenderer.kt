@@ -427,9 +427,9 @@ open class RsPsiRenderer(
                     }
                 }
                 assocTypeBindings.joinToWithBuffer(sb, ", ") { sb ->
-                    sb.append(referenceName)
+                    appendPath(sb, path)
                     sb.append("=")
-                    typeReference?.let { appendTypeReference(sb, it) }
+                    typeReference?.let { appendTypeReference(sb, it) } // TODO: bound???
                 }
                 sb.append(">")
             }

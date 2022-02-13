@@ -184,18 +184,16 @@ sealed class RsDiagnostic(
 
         private fun errTyOfTryFromActualImplForTy(ty: Ty, items: KnownItems, lookup: ImplLookup): Ty? {
             val fromTrait = items.TryFrom ?: return null
-            val result = lookup.selectProjectionStrict(TraitRef(ty, fromTrait.withSubst(actualTy)),
-                fromTrait.associatedTypesTransitively.find { it.name == "Error" } ?: return null)
+            val errorType = fromTrait.associatedTypesTransitively.find { it.name == "Error" } ?: return null
+            val result = lookup.selectProjectionStrict(TraitRef(ty, fromTrait.withSubst(actualTy)), errorType.withSubst())
             return result.ok()?.value
         }
 
         private fun ifActualIsStrGetErrTyOfFromStrImplForTy(ty: Ty, items: KnownItems, lookup: ImplLookup): Ty? {
             if (lookup.coercionSequence(actualTy).lastOrNull() !is TyStr) return null
             val fromStr = items.FromStr ?: return null
-            val result = lookup.selectProjectionStrict(
-                TraitRef(ty, BoundElement(fromStr)),
-                fromStr.findAssociatedType("Err") ?: return null
-            )
+            val errType = fromStr.findAssociatedType("Err") ?: return null
+            val result = lookup.selectProjectionStrict(TraitRef(ty, fromStr.withSubst()), errType.withSubst())
             return result.ok()?.value
         }
 

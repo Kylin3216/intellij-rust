@@ -28,8 +28,11 @@ sealed class Predicate : TypeFoldable<Predicate> {
         val projectionTy: TyProjection,
         val ty: Ty
     ) : Predicate() {
-        override fun superFoldWith(folder: TypeFolder): Projection =
-            Projection(projectionTy.foldWith(folder) as TyProjection, ty.foldWith(folder))
+        override fun superFoldWith(folder: TypeFolder): Projection {
+            val projectionTy1 = projectionTy.foldWith(folder) as TyProjection
+            val ty1 = ty.foldWith(folder)
+            return Projection(projectionTy1, ty1)
+        }
 
         override fun superVisitWith(visitor: TypeVisitor): Boolean =
             projectionTy.visitWith(visitor) || ty.visitWith(visitor)
